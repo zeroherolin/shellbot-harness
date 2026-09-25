@@ -1,0 +1,127 @@
+{
+  "host": "https://REPLACE_WITH_PLATFORM_HOST",  // ShellBot 平台地址，必填
+  "token": "",                                   // ShellBot 平台 API token（后台「系统 token」），发消息、查历史都用它；留空取环境变量 SHELLBOT_TOKEN
+
+  "bot": {
+    "id": 0,                                // 机器人 id（后台机器人列表里的数字 id），必填
+    "name": ""                              // 机器人的微信昵称，@ / 引用 / 提到昵称都按它认；留空用平台记的（puppet 登录时写入，之后改名平台不更新，OpenClaw 发的文字又没有回显可学，改了名就填这里）
+  },
+  "owner": "wxid_REPLACE_WITH_OWNER_WXID",  // 主人 wxid，必填（只认 wxid）。私聊机器人一句，logs/*.jsonl 里 inbound 的 from 就是
+  "workspace": "mybot.local/workspace",     // 工作目录，必填：人格、记忆、图库、上下文、日志都在这里；相对路径按仓库根目录算，一个机器人一个（如 mybot.local/workspace），不能是仓库根目录或仓库里的 workspace/ 模板目录
+  "timezone": "Asia/Shanghai",              // 强制时区，写 Asia/Shanghai 这类 IANA 名（CST、GMT+8 这类缩写 Node 不认）：静默时段、日志日期、给模型看的时间都按它算
+  "blockedSenders": [],                     // 黑名单 wxid，这些人的消息直接忽略
+
+  "dm": {
+    "policy": "owner",                          // 私聊策略：owner 只回主人 | allowlist 只回 allowFrom | open 回所有人
+    "allowFrom": [],                            // allowlist 时允许私聊的 wxid
+    "fallback": "刚才没接上，稍后再问我一次。"  // 私聊里模型拒答 / 轮数用尽 / 请求出错时发的兜底话；留空则沉默（群里一律沉默）
+  },
+
+  "groups": {
+    "policy": "allowlist",                       // 群策略：allowlist 只回 allow 里的群 | open 所在群都回 | disabled 不回群
+    "allow": ["REPLACE_WITH_ROOM_ID@chatroom"],  // 白名单群 wxid（@chatroom 结尾）
+    "wakePatterns": [],                          // 唤醒词正则（不区分大小写），放别名或句式；提到昵称本身由 nameTrigger 管
+    "nameTrigger": true,                         // 群里提到机器人昵称也触发，不用 @（引用块里的、连着字母的不算）
+    "chime": {
+      "enabled": false,                          // 主动插嘴：群里没人叫也偶尔被唤起判断要不要接一句
+      "cooldownMinutes": 15,                     // 同一群两次插嘴至少隔几分钟
+      "probability": 0.15                        // 每条未触发的群文字消息唤起一次判断的概率（0~1）
+    },
+    "mentionBack": {
+      "enabled": true,                           // 群里回人模型没写 @ 时系统补 @ 回触发者（平台无引用回复，只能靠 @）
+      "quietWindowSec": 120,                     // 回复前这么多秒内说话的人少于 minSpeakers 就不补 @（只有他一人在聊）
+      "minSpeakers": 2                           // 窗口内至少几个不同的人在说话才补 @
+    },
+    "warmupHistory": 200                         // 启动时每个群翻多少条历史补成员表（0 = 不翻，最多 500），异步不阻塞
+  },
+
+  "agent": {
+    "protocol": "openai",                            // openai（兼容 /v1/chat/completions）| anthropic（Messages API）
+    "baseUrl": "https://REPLACE_WITH_LLM_BASE_URL",  // 模型接口地址，openai 必填；anthropic 留空则读 ANTHROPIC_BASE_URL
+    "token": "sk-REPLACE_WITH_LLM_TOKEN",            // 模型 token，openai 必填；anthropic 留空则读 ANTHROPIC_AUTH_TOKEN / ANTHROPIC_API_KEY
+    "model": "REPLACE_WITH_MODEL_NAME",              // 模型名，必填
+    "maxOutputTokens": 4096,                         // 单次回复最多生成多少 token
+    "maxInputTokens": 32000,                         // 输入预算（估算），超出按重要性截断上下文；0 = 不限
+    "effort": "",                                    // 推理强度（low / medium / high 等），留空不传；仅推理型模型认，普通模型设了会报错
+    "thinking": "",                                  // anthropic 协议的思考开关：留空按模型默认 | adaptive 开自适应思考 | disabled 关（部分模型不接受 disabled，会报错）；openai 协议忽略
+    "maxTurns": 6,                                   // 一轮最多请求模型几次（每次工具调用后再请求一次，最后作答那次也算）
+    "timeoutMs": 180000,                             // 单次模型请求超时
+    "turnTimeoutMs": 300000,                         // 一轮（全部请求、重试、工具调用加起来）最多多久，到点放弃这轮；不能小于 timeoutMs
+    "retries": 2,                                    // 模型请求遇网络错误 / 5xx / 429 的重试次数（429 退避更久，服务端给了 Retry-After 就按它）
+    "debounceMs": 1500,                              // 同一人短时间连发合并成一轮的等待窗口；0 = 不合并
+    "toolResultMaxChars": 8000                       // 单个工具返回给模型的最大字符数，小上下文模型调低
+  },
+
+  "context": {
+    "size": 100,       // 模型每轮能看到的最近消息条数
+    "rosterSize": 80,  // 群聊每轮给模型的成员名单最多几人（最近说过话的优先）：模型只知道名单里的人能 @，大群可调高（每人约多几个 token）
+    "peekLines": 10    // 主人私聊跨会话发消息后，附目标会话最近几条供判断措辞；0 = 不附
+  },
+
+  "images": {
+    "vision": true,              // 让模型看图（需多模态模型）
+    "window": 8,                 // 没引用时只有触发点前这么多条内的图才自动带给模型，更早的靠引用
+    "maxBytes": 5000000,         // 单张超过这个字节数就不下载，回退直传 url
+    "downloadTimeoutMs": 15000,  // 图片下载超时
+    "downloadRetries": 3,        // 下载重试次数（刚发的图平台重托管有延迟）
+    "rehost": true,              // 发图前把不在平台托管的图先上传到平台再发：平台是自己去拉外站 url，海外 / 临时图床超时会静默丢图
+    "avatarPatterns": ["头像"]   // 触发消息命中这些正则就把机器人自己的头像图附给模型（问头像时能照图描述）；头像放 <workspace>/avatar.jpg，没有就用平台上登录时传的那张
+  },
+
+  "stickers": {
+    "edge": 240,                  // 表情包入库时压成长边多少像素（微信官方规范 240）
+    "quality": 85,                // jpg 质量 1~100
+    "maxCount": 100,              // 图库上限，防 system prompt 无限膨胀
+    "repeatCooldownMinutes": 10,  // 群里同一张表情包这么多分钟内不重发，改用文字（0 不限；私聊不限）
+    "inboundPollSec": 15          // 群友发的微信表情平台不记录，每隔这么多秒拉一次 puppet 日志补进来（0 = 不收，不能小于 5；日志只留最后 1000 行，间隔太长会漏）
+  },
+
+  "history": {
+    "defaultCount": 100,      // read_history 一次默认翻多少条
+    "maxCount": 500,          // 一次最多翻多少条（最多 500）
+    "quotedImageDepth": 1000  // 引用了历史图片时，往前翻多少条去找那张图
+  },
+
+  "memory": {
+    "maxGlobalLines": 200,  // 全局记忆最多几条，超出最旧的归档到 archive/
+    "maxNoteLines": 80,     // 每个会话备忘最多几条，超出最旧的归档到 archive/
+    "maxEntryChars": 200    // remember 写入的单条最长多少字
+  },
+
+  "limits": {
+    "minIntervalMs": 2000,      // 全局发送节流：任意两条出站至少隔这么久，排队不丢
+    "maxWaitMs": 120000,        // 触发消息或出站消息排队超过这么久还没处理 / 发出就丢弃；重启续发的也按它算
+    "groupImagesPerTurn": 1,    // 群里一次回复最多几张图 / 表情，超出即拒改用文字（0 不限；私聊不限）
+    "groupImagesOnRequest": 6,  // 有人明说要多发（「都发出来」「发三张」「挨个发」）时这一轮放宽到几张（0 不限；不大于上一项就等于不放宽）
+    "quietHours": {
+      "enabled": true,          // 静默时段开关
+      "from": 23,               // 静默开始小时（0~24），from > to 表示跨夜
+      "to": 8,                  // 静默结束小时（0~24）
+      "allowDirect": true       // 静默时段内是否仍回直接触发（私聊 / @ / 引用 / 唤醒词 / 提到昵称）；关了就全不回
+    },
+    "split": {
+      "maxChars": 800,          // 单条文字超过多少字就自动再拆
+      "maxParts": 5             // 一轮最多发几条文字：模型用 --- 主动分的、超长自动拆的、say 先发的都算；say 把配额用完时最后的回复仍保底 1 条
+    }
+  },
+
+  "logs": {
+    "keepDays": 30  // 日志保留天数，超期的每日 JSONL 自动删除（启动时与跨天各清一次）
+  },
+
+  "health": {
+    "checkMinutes": 5  // 每隔几分钟复查一次平台侧：机器人状态（掉线 / 待扫码时收不到任何消息）和 OpenClaw 等开关，有变化才记日志、按需重连；0 = 只在启动时查一次
+  },
+
+  "network": {
+    "sendTimeoutMs": 15000,         // 发消息 / 上传图片的单次超时，也是 OpenClaw 等平台确认收到的时限
+    "sendRetries": 2,               // 平台接口重试次数：查询类遇网络错误 / 5xx / 429 都重试；发消息只在 429 / 503 重试（其余可能已受理，重发会重复进群）
+    "apiTimeoutMs": 30000,          // 平台查询类接口（历史、日志、群、联系人）的单次超时
+    "platformTimeoutMs": 10000,     // 拉平台配置的超时：入站 MQTT broker 配置、出站 OpenClaw 配置都用它
+    "mqttKeepalive": 30,            // MQTT 心跳秒数
+    "mqttConnectTimeoutMs": 15000,  // MQTT 连接超时
+    "reconnectBaseMs": 2000,        // 断线重连退避起点（指数增长 ± 10% 抖动）
+    "reconnectMaxMs": 60000,        // 重连退避上限
+    "mqttClientIdSuffix": ""        // MQTT clientId 后缀，只用于排查时区分连接，只能用字母 / 数字 / _ / -；正常留空。同一个机器人只能跑一个 harness（跑两个会重复回复）
+  }
+}

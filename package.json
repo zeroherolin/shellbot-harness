@@ -1,0 +1,35 @@
+{
+  "name": "shellbot-harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "极简微信群聊 AI 助手 harness：ShellBot 原生 MQTT 收、OpenClaw 真 @、平台接口直连",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "probe": "node bin/probe.js",
+    "config:example": "node bin/config.js example",
+    "config:migrate": "node bin/config.js migrate"
+  },
+  "keywords": [
+    "wechat",
+    "bot",
+    "mqtt",
+    "llm",
+    "shellbot",
+    "群聊助手"
+  ],
+  "author": "Linz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeroherolin/shellbot-harness.git"
+  },
+  "homepage": "https://github.com/zeroherolin/shellbot-harness#readme",
+  "bugs": "https://github.com/zeroherolin/shellbot-harness/issues",
+  "dependencies": {
+    "mqtt": "^5.16.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
