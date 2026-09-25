@@ -1,0 +1,30 @@
+# 依赖
+node_modules/
+
+# 私有内容（真实配置、真实人格 / 记忆、内部笔记），一律不提交；一个机器人一个 <名字>.local/
+*.local/
+
+# 根目录的实际配置（若不放 <名字>.local/）及迁移时的自动备份（里面有真实 token）
+config.jsonc
+config.json
+*.bak-*
+
+# workspace 运行时数据（会累积聊天内容），只提交 SOUL.md 与 stickers.json 模板
+workspace/MEMORY.md
+workspace/memory/
+workspace/context/
+workspace/logs/
+workspace/archive/
+workspace/rooms.json
+workspace/members.json
+workspace/self.json
+workspace/contacts.json
+workspace/outbox.json*
+workspace/sent/
+workspace/avatar.*
+workspace/harness.lock
+# 原子写的临时文件、读坏后留作证据的文件（都可能含聊天内容）
+workspace/*.tmp-*
+workspace/*.corrupt-*
+
+.DS_Store
